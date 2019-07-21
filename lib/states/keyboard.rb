@@ -8,30 +8,49 @@ module MorseKeyboard
         @history    = []
         @current_letter = []
         @last_keyed = Gosu.milliseconds
+
+        @history_text = CyberarmEngine::Text.new("", x: 10, y: 10)
+        @morse_code_text = CyberarmEngine::Text.new("", y: 10, size: 20)
+
+        projected_letter_height = 256
+        @current_letter_text   = CyberarmEngine::Text.new("", size: projected_letter_height, x: window.width/2 - projected_letter_height/2, y: window.height/2 + projected_letter_height/2)
+        @projected_letter_text = CyberarmEngine::Text.new("", size: projected_letter_height, x: window.width/2 - projected_letter_height/2, y: window.height/2 - projected_letter_height/2)
+
+        @morse_code_text.text = @morse_code.code.map { |letter, code| ["<c=ff5500>#{letter}</c>", code.map { |encoded| encoded == :dot ? "." : "-" }.join].join(": ") }.join("\n")
+        @morse_code_text.x = window.width - (@morse_code_text.width + 10)
       end
 
       def draw
         super
 
-        fill(0xff552211)
+        fill(0xff111111)
+        @history_text.draw
+        @current_letter_text.draw
+        @projected_letter_text.draw
+        @morse_code_text.draw
       end
 
       def update
+        @history_text.text = @history.join
+
+        @current_letter_text.text = @current_letter.map { |code| code == :dot ? "." : "-" }.join
+        @current_letter_text.x = window.width / 2 - @current_letter_text.width / 2
+
+        letter = decode_letter
+        @projected_letter_text.text = letter ? letter.first : ""
+        @projected_letter_text.x = window.width / 2 - @projected_letter_text.width / 2
+
         if @current_letter.size > 0 && Gosu.milliseconds - @last_keyed >= @morse_code.short
-          decode_letter
+
+          @history << letter.first if letter
+          @current_letter.clear
         end
       end
 
       def decode_letter
-        pp @current_letter
-
-        letter = @morse_code.code.detect do |letter, code|
+        @morse_code.code.detect do |letter, code|
           @current_letter == code
         end
-
-        p letter
-
-        @current_letter.clear
       end
 
       def button_down(id)
@@ -46,8 +65,8 @@ module MorseKeyboard
           @current_letter << :dot
         elsif key_time > @morse_code.dot && key_time <= @morse_code.dash
           @current_letter << :dash
-        else
-          puts "Held to long!"
+        elsif key_time > @morse_code.short
+          @history << " "
         end
       end
 
