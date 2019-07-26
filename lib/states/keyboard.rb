@@ -28,6 +28,16 @@ module MorseKeyboard
         @current_letter_text.draw
         @projected_letter_text.draw
         @morse_code_text.draw
+
+        draw_rect(@history_text.x + @history_text.width, @history_text.y, 1, @history_text.height, 0xffff5500)
+
+        draw_rect(
+          0 + window.width / 4,
+          window.height - 3,
+          window.width / 2,
+          2,
+          0xffff5500
+        ) if @triggered_key
       end
 
       def update
@@ -55,11 +65,14 @@ module MorseKeyboard
 
       def button_down(id)
         return unless id == @trigger_key
+        @triggered_key = true
         @last_keyed = Gosu.milliseconds
       end
 
       def button_up(id)
         return unless id == @trigger_key
+
+        @triggered_key = false
 
         if key_time <= @morse_code.dot
           @current_letter << :dot
